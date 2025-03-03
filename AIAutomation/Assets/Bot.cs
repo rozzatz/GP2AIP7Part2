@@ -74,14 +74,66 @@ public class Bot : MonoBehaviour
         float dist = Mathf.Infinity;
         Vector3 chosenSpot = Vector3.zero;
 
+        for (int i = 0; i <  World.Instance.GetHidingSpots().Length; i++)
+        {
+            Vector3 hideDir = World.Instance.GetHidingSpots()[i].transform.position - target.transform.position;
+            Vector3 HidePos = World.Instance.GetHidingSpots()[i].transform.position + hideDir.normalized * 5;
 
+            if(Vector3.Distance(this.transform.position, HidePos) < dist)
+            {
+                chosenSpot = HidePos;
+                dist = Vector3.Distance(this.transform.position, HidePos);
+            }
+        }
+
+        Seek(chosenSpot);
     }
 
+    void CleverHide()
+    {
+        float dist = Mathf.Infinity;
+        Vector3 chosenSpot = Vector3.zero;
+        Vector3 ChosenDir = Vector3.zero;
+        GameObject chosenGO = World.Instance.GetHidingSpots()[0];
+
+        for (int i = 0; i < World.Instance.GetHidingSpots().Length; i++)
+        {
+            Vector3 hideDir = World.Instance.GetHidingSpots()[i].transform.position - target.transform.position;
+            Vector3 HidePos = World.Instance.GetHidingSpots()[i].transform.position + hideDir.normalized * 5;
+
+            if (Vector3.Distance(this.transform.position, HidePos) < dist)
+            {
+                chosenSpot = HidePos;
+                ChosenDir = hideDir;
+                chosenGO = World.Instance.GetHidingSpots()[i];
+                dist = Vector3.Distance(this.transform.position, HidePos);
+            }
+        }
+        Collider hideCol = chosenGO.GetComponent<Collider>();
+        Ray backRay = new Ray(chosenSpot, -ChosenDir.normalized);
+        RaycastHit info;
+        float distance = 100.0f;
+        hideCol.Raycast(backRay, out info, distance );
+
+        Seek(info.point + ChosenDir.normalized * 5);
+    }
+    
+    bool CanSeeTarget()
+    {
+        RaycastHit raycastInfo;
+        Vector3 rayToTarget = target.transform.position - this.transform.position;
+        if (Physics.Raycast(this.transform.position, rayToTarget, out raycastInfo))
+        {
+            if (raycastInfo.transform.gameObject.tag == "cop")
+                return true;
+        }
+        return false;
+    }
     // Update is called once per frame
     void Update()
     {
-       
-            Wander();
+       if(CanSeeTarget())
+            CleverHide();
         
     }
 }
